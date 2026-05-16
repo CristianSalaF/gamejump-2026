@@ -283,13 +283,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 372709691}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.37686956, y: 0.16042998, z: 0.066452265, w: 0.9098438}
-  m_LocalPosition: {x: 0.75, y: 0.5, z: 1}
+  m_LocalRotation: {x: -0.40583238, y: 0.055394392, z: -0.17577405, w: 0.89517313}
+  m_LocalPosition: {x: 0.22000003, y: 0.73, z: 0.65999997}
   m_LocalScale: {x: 0.1, y: 0.25, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1000411977}
-  m_LocalEulerAnglesHint: {x: -45, y: 20, z: 0}
+  m_Father: {fileID: 837340755}
+  m_LocalEulerAnglesHint: {x: -45, y: 20, z: -30.573}
 --- !u!65 &372709693
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -450,6 +450,38 @@ Transform:
   - {fileID: 760125390}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &837340754
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 837340755}
+  m_Layer: 0
+  m_Name: SwordPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &837340755
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837340754}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.53, y: -0.23, z: 0.34}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 372709692}
+  m_Father: {fileID: 1000411977}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &849516399
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,7 +619,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1000411977}
   - component: {fileID: 1000411976}
-  - component: {fileID: 1000411975}
   - component: {fileID: 1000411974}
   - component: {fileID: 1000411984}
   - component: {fileID: 1000411983}
@@ -626,55 +657,6 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &1000411975
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000411973}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1000411976
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -697,8 +679,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1228917993}
-  - {fileID: 372709692}
   - {fileID: 2146147997}
+  - {fileID: 837340755}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1000411978
@@ -713,6 +695,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d52637f584c352f4cb79a08a408520d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatBootstrapper
+  _stamina: {fileID: 0}
+  _movement: {fileID: 0}
+  _sword: {fileID: 0}
+  _block: {fileID: 0}
+  _health: {fileID: 0}
 --- !u!114 &1000411979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -725,16 +712,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f0e35570c1b7499449aabc497af3c615, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwordSwingHandler
+  pivotTransform: {fileID: 837340755}
   swordTransform: {fileID: 372709692}
-  swingAngle: 80
+  swingAngle: 30
   swingDuration: 0.3
   returnDuration: 0.18
   cooldownDuration: 0.25
   damagePerSwing: 20
   attackRange: 2
   hitLayers:
-    serializedVersion: 2
     m_Bits: 128
+  _isSwinging: 0
+  _swingFromLeft: 1
+  _pivotRestRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &1000411980
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -748,8 +738,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StaminaSystem
   maxStamina: 100
-  regenRatePerSecond: 10
+  regenRatePerSecond: 20
   regenDelayAfterUse: 1.5
+  _currentStamina: 0
+  _regenCooldownTimer: 0
 --- !u!114 &1000411981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -766,9 +758,12 @@ MonoBehaviour:
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
+    m_CallsDirty: 1
   OnDeath:
     m_PersistentCalls:
       m_Calls: []
+    m_CallsDirty: 1
+  _currentHealth: 0
 --- !u!114 &1000411982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -782,16 +777,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstPersonMovement
   moveSpeed: 5
-  gravity: -19.62
+  gravity: -9.8
   jumpHeight: 1.2
-  groundCheck: {fileID: 0}
-  groundCheckRadius: 0.25
+  groundCheck: {fileID: 1086134029}
+  groundCheckRadius: 0.5
   groundMask:
-    serializedVersion: 2
     m_Bits: 0
-  cameraHolder: {fileID: 0}
+  cameraHolder: {fileID: 1228917993}
   mouseSensitivity: 0.15
   verticalClampDeg: 85
+  _controller: {fileID: 0}
+  _velocity: {x: 0, y: 0, z: 0}
+  _verticalRotation: 0
+  _isGrounded: 0
 --- !u!114 &1000411983
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -805,11 +803,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlockHandler
   shieldTransform: {fileID: 2146147997}
-  staminaCostPerSecond: 15
+  staminaCostPerSecond: 5
   damageReductionPercent: 0.75
   raisedPositionOffset: {x: 0.2, y: 0.35, z: 0.1}
   raisedRotationOffset: {x: 20, y: 15, z: 0}
   transitionSpeed: 12
+  _restLocalPosition: {x: 0, y: 0, z: 0}
+  _restLocalRotation: {x: 0, y: 0, z: 0, w: 0}
+  _raisedLocalPosition: {x: 0, y: 0, z: 0}
+  _raisedLocalRotation: {x: 0, y: 0, z: 0, w: 0}
+  _blockInputHeld: 0
+  _isBlocking: 0
 --- !u!143 &1000411984
 CharacterController:
   m_ObjectHideFlags: 0

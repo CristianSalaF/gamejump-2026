@@ -27,8 +27,11 @@ public class PlayerController : MonoBehaviour
 
     float xRotation = 0f;
 
+    [Header("Movement Lock")]
+    public bool movementLocked = true;
+
     void Awake()
-    { 
+    {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
         audioSource = GetComponent<AudioSource>();
@@ -46,16 +49,21 @@ public class PlayerController : MonoBehaviour
         isGrounded = controller.isGrounded;
 
         // Repeat Inputs
-        if(input.Attack.IsPressed())
+        if (input.Attack.IsPressed())
         { Attack(); }
 
         SetAnimations();
     }
 
-    void FixedUpdate() 
-    { MoveInput(input.Movement.ReadValue<Vector2>()); }
+    void FixedUpdate()
+    {
+        if (!movementLocked)
+            MoveInput(input.Movement.ReadValue<Vector2>());
+        else
+            ApplyGravityOnly(); // Prevents floating by still resolving gravity
+    }
 
-    void LateUpdate() 
+    void LateUpdate()
     { LookInput(input.Look.ReadValue<Vector2>()); }
 
     void MoveInput(Vector2 input)
@@ -66,7 +74,16 @@ public class PlayerController : MonoBehaviour
 
         controller.Move(transform.TransformDirection(moveDirection) * moveSpeed * Time.deltaTime);
         _PlayerVelocity.y += gravity * Time.deltaTime;
-        if(isGrounded && _PlayerVelocity.y < 0)
+        if (isGrounded && _PlayerVelocity.y < 0)
+            _PlayerVelocity.y = -2f;
+        controller.Move(_PlayerVelocity * Time.deltaTime);
+    }
+
+    // Applies gravity without allowing horizontal movement input
+    void ApplyGravityOnly()
+    {
+        _PlayerVelocity.y += gravity * Time.deltaTime;
+        if (isGrounded && _PlayerVelocity.y < 0)
             _PlayerVelocity.y = -2f;
         controller.Move(_PlayerVelocity * Time.deltaTime);
     }
@@ -84,7 +101,7 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(Vector3.up * (mouseX * Time.deltaTime * sensitivity));
     }
 
-    void OnEnable() 
+    void OnEnable()
     { input.Enable(); }
 
     void OnDisable()
@@ -92,7 +109,8 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-        // Adds force to the player rigidbody to jump
+        if (movementLocked) return; // Block jump when movement is locked
+
         if (isGrounded)
             _PlayerVelocity.y = Mathf.Sqrt(jumpHeight * -3.0f * gravity);
     }
@@ -102,6 +120,10 @@ public class PlayerController : MonoBehaviour
         input.Jump.performed += ctx => Jump();
         input.Attack.started += ctx => Attack();
     }
+
+    // Call these from anywhere to lock/unlock player movement
+    public void LockMovement() => movementLocked = true;
+    public void UnlockMovement() => movementLocked = false;
 
     // ---------- //
     // ANIMATIONS //
@@ -114,7 +136,7 @@ public class PlayerController : MonoBehaviour
 
     string currentAnimationState;
 
-    public void ChangeAnimationState(string newState) 
+    public void ChangeAnimationState(string newState)
     {
         // STOP THE SAME ANIMATION FROM INTERRUPTING WITH ITSELF //
         if (currentAnimationState == newState) return;
@@ -127,9 +149,9 @@ public class PlayerController : MonoBehaviour
     void SetAnimations()
     {
         // If player is not attacking
-        if(!attacking)
+        if (!attacking)
         {
-            if(_PlayerVelocity.x == 0 &&_PlayerVelocity.z == 0)
+            if (_PlayerVelocity.x == 0 && _PlayerVelocity.z == 0)
             { ChangeAnimationState(IDLE); }
             else
             { ChangeAnimationState(WALK); }
@@ -157,8 +179,9 @@ public class PlayerController : MonoBehaviour
 
     public void Attack()
     {
-        if(!readyToAttack || attacking) return;
+        if (!readyToAttack || attacking) return;
 
+        movementLocked = true; // Lock movement during attack
         readyToAttack = false;
         attacking = true;
 
@@ -168,7 +191,7 @@ public class PlayerController : MonoBehaviour
         audioSource.pitch = Random.Range(0.9f, 1.1f);
         audioSource.PlayOneShot(swordSwing);
 
-        if(attackCount == 0)
+        if (attackCount == 0)
         {
             ChangeAnimationState(ATTACK1);
             attackCount++;
@@ -180,21 +203,23 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     void ResetAttack()
     {
+        movementLocked = false; // Unlock movement after attack
         attacking = false;
         readyToAttack = true;
     }
 
     void AttackRaycast()
     {
-        if(Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, attackDistance, attackLayer))
-        { 
+        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out RaycastHit hit, attackDistance, attackLayer))
+        {
             HitTarget(hit.point);
 
-            if(hit.transform.TryGetComponent<Actor>(out Actor T))
+            if (hit.transform.TryGetComponent<Actor>(out Actor T))
             { T.TakeDamage(attackDamage); }
-        } 
+        }
     }
 
     void HitTarget(Vector3 pos)

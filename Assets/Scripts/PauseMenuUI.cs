@@ -2,10 +2,18 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+/// <summary>
+/// Controls the in-game pause menu.
+/// Sliders delegate to AudioManager – add more sliders the same way
+/// without touching any other class.
+/// </summary>
 public class PauseMenuUI : MonoBehaviour
 {
-    public GameObject pausePanel;         // already set in scene: Menu GameObject
-    public GameObject settingsSubPanel;   // SetingsPanel
+    [Header("Panels")]
+    public GameObject pausePanel;
+    public GameObject settingsSubPanel;
+
+    [Header("Volume Sliders")]
     public Slider masterSlider;
     public Slider musicSlider;
     public Slider sfxSlider;
@@ -16,6 +24,16 @@ public class PauseMenuUI : MonoBehaviour
     void Awake()
     {
         _input = new PlayerInput();
+    }
+
+    void Start()
+    {
+        // Initialise sliders from saved prefs (no circular callbacks)
+        InitSliders();
+
+        masterSlider.onValueChanged.AddListener(OnMasterChanged);
+        musicSlider.onValueChanged.AddListener(OnMusicChanged);
+        sfxSlider.onValueChanged.AddListener(OnSFXChanged);
     }
 
     void OnEnable()
@@ -29,6 +47,17 @@ public class PauseMenuUI : MonoBehaviour
         _input.Main.Pause.performed -= OnPausePressed;
         _input.Main.Disable();
     }
+
+    void OnDestroy()
+    {
+        masterSlider.onValueChanged.RemoveListener(OnMasterChanged);
+        musicSlider.onValueChanged.RemoveListener(OnMusicChanged);
+        sfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
+    }
+
+    private void OnMasterChanged(float v) => AudioManager.Instance?.SetMasterVolume(v);
+    private void OnMusicChanged(float v) => AudioManager.Instance?.SetMusicVolume(v);
+    private void OnSFXChanged(float v) => AudioManager.Instance?.SetSFXVolume(v);
 
     private void OnPausePressed(InputAction.CallbackContext ctx)
     {
@@ -55,20 +84,12 @@ public class PauseMenuUI : MonoBehaviour
         Cursor.visible = false;
     }
 
-    public void OnSettingsButton()
-    {
-        settingsSubPanel.SetActive(true);
-    }
-
-    public void OnBackSettingsButton()
-    {
-        settingsSubPanel.SetActive(false);
-    }
+    public void OnSettingsButton() => settingsSubPanel.SetActive(true);
+    public void OnBackSettingsButton() => settingsSubPanel.SetActive(false);
 
     public void OnMainMenuButton()
     {
         Time.timeScale = 1f;
-        // Replace with however your GameManager loads scenes:
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
 
@@ -76,5 +97,18 @@ public class PauseMenuUI : MonoBehaviour
     {
         Time.timeScale = 1f;
         Application.Quit();
+    }
+
+    private void InitSliders()
+    {
+        if (AudioManager.Instance == null) return;
+
+        masterSlider.onValueChanged.RemoveAllListeners();
+        musicSlider.onValueChanged.RemoveAllListeners();
+        sfxSlider.onValueChanged.RemoveAllListeners();
+
+        masterSlider.value = AudioManager.Instance.GetSavedMasterVolume();
+        musicSlider.value = AudioManager.Instance.GetSavedMusicVolume();
+        sfxSlider.value = AudioManager.Instance.GetSavedSFXVolume();
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Shared interface � both enemy types implement this so the player
+// Shared interface – both enemy types implement this so the player
 // doesn't need to know which kind it is hitting.
 public interface IDamageable
 {
@@ -17,7 +17,14 @@ public class PlayerController : MonoBehaviour
 
     CharacterController controller;
     Animator animator;
-    AudioSource audioSource;
+
+    // ── Two dedicated AudioSources ─────────────────────────────────────────
+    // Assign both in the Inspector and set their Output to the SFX mixer group.
+    [Header("Audio")]
+    [Tooltip("AudioSource used for sword swing sounds. Output → SFX mixer group.")]
+    public AudioSource sfxSource;       // looping-safe, one-shot SFX
+    [Tooltip("AudioSource used for hit sounds. Output → SFX mixer group.")]
+    public AudioSource hitSource;       // separate source so swing + hit can overlap
 
     [Header("Controller")]
     public float moveSpeed = 5;
@@ -40,7 +47,6 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
-        audioSource = GetComponent<AudioSource>();
 
         playerInput = new PlayerInput();
         input = playerInput.Main;
@@ -55,7 +61,7 @@ public class PlayerController : MonoBehaviour
         isGrounded = controller.isGrounded;
 
         if (input.Attack.IsPressed())
-        { Attack(); }
+            Attack();
 
         SetAnimations();
     }
@@ -69,7 +75,9 @@ public class PlayerController : MonoBehaviour
     }
 
     void LateUpdate()
-    { LookInput(input.Look.ReadValue<Vector2>()); }
+    {
+        LookInput(input.Look.ReadValue<Vector2>());
+    }
 
     void MoveInput(Vector2 input)
     {
@@ -123,9 +131,7 @@ public class PlayerController : MonoBehaviour
     public void LockMovement() => movementLocked = true;
     public void UnlockMovement() => movementLocked = false;
 
-    // ---------- //
-    // ANIMATIONS //
-    // ---------- //
+    // ── Animations ─────────────────────────────────────────────────────────
 
     public const string IDLE = "Idle";
     public const string WALK = "Walk";
@@ -152,9 +158,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ------------------- //
-    // ATTACKING BEHAVIOUR //
-    // ------------------- //
+    // ── Attacking ──────────────────────────────────────────────────────────
 
     [Header("Attacking")]
     public float attackDistance = 2f;
@@ -163,8 +167,9 @@ public class PlayerController : MonoBehaviour
     public int attackDamage = 1;
     public LayerMask attackLayer;
 
-    public AudioClip swordSwing;
-    public AudioClip hitSound;
+    [Header("Attack Sounds")]
+    public AudioClip swordSwing;  // played immediately when attack starts
+    public AudioClip hitSound;    // played when the raycast connects
 
     bool attacking = false;
     bool readyToAttack = true;
@@ -181,8 +186,12 @@ public class PlayerController : MonoBehaviour
         Invoke(nameof(ResetAttack), attackSpeed);
         Invoke(nameof(AttackRaycast), attackDelay);
 
-        audioSource.pitch = Random.Range(0.9f, 1.1f);
-        audioSource.PlayOneShot(swordSwing);
+        // Sword swing – slight pitch randomisation for variety
+        if (sfxSource != null && swordSwing != null)
+        {
+            sfxSource.pitch = Random.Range(0.9f, 1.1f);
+            sfxSource.PlayOneShot(swordSwing);
+        }
 
         if (attackCount == 0)
         {
@@ -208,18 +217,18 @@ public class PlayerController : MonoBehaviour
         if (Physics.Raycast(cam.transform.position, cam.transform.forward,
                             out RaycastHit hit, attackDistance, attackLayer))
         {
-            HitTarget(hit.point);
+            // Hit sound through its own source so it can overlap the swing
+            if (hitSource != null && hitSound != null)
+            {
+                hitSource.pitch = 1f;
+                hitSource.PlayOneShot(hitSound);
+            }
 
-            // Works with any component that implements IDamageable
             if (hit.transform.TryGetComponent<IDamageable>(out IDamageable target))
+            {
                 target.TakeDamage(attackDamage);
                 Debug.Log(target + " attacked");
+            }
         }
-    }
-
-    void HitTarget(Vector3 pos)
-    {
-        audioSource.pitch = 1;
-        audioSource.PlayOneShot(hitSound);
     }
 }

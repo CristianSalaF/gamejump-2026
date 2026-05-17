@@ -1,20 +1,12 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Controlador del Menú Principal.
-///
-/// Jerarquía UI sugerida:
-///   Canvas
-///     MainPanel
-///         Button_Play
-///         Button_Settings
-///         Button_Quit
-///     SettingsPanel
-///         Slider_Master
-///         Slider_Music
-///         Slider_SFX
-///         Button_Back
+/// Controls the Main Menu canvas.
+/// Sliders call AudioManager directly so you never have to touch this class
+/// when adding new mixer groups – just add a new slider and wire its
+/// OnValueChanged to the matching AudioManager.SetXxxVolume method.
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
@@ -22,25 +14,44 @@ public class MainMenuUI : MonoBehaviour
     public GameObject mainPanel;
     public GameObject settingsPanel;
 
-    [Header("Settings – Sliders")]
+    [Header("Volume Sliders")]
     public Slider masterSlider;
     public Slider musicSlider;
     public Slider sfxSlider;
 
-
     void Start()
     {
-        ShowMainPanel();
+        // Start main-menu music (safe if AudioManager already playing it)
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayMainMenuMusic();
+
+        // Initialise sliders from saved prefs without triggering OnValueChanged
         InitSliders();
+
+        // Wire slider callbacks
+        masterSlider.onValueChanged.AddListener(OnMasterChanged);
+        musicSlider.onValueChanged.AddListener(OnMusicChanged);
+        sfxSlider.onValueChanged.AddListener(OnSFXChanged);
+
+        // Make sure only the main panel is visible
+        mainPanel.SetActive(true);
+        settingsPanel.SetActive(false);
     }
 
+    void OnDestroy()
+    {
+        masterSlider.onValueChanged.RemoveListener(OnMasterChanged);
+        musicSlider.onValueChanged.RemoveListener(OnMusicChanged);
+        sfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
+    }
+
+    private void OnMasterChanged(float v) => AudioManager.Instance?.SetMasterVolume(v);
+    private void OnMusicChanged(float v) => AudioManager.Instance?.SetMusicVolume(v);
+    private void OnSFXChanged(float v) => AudioManager.Instance?.SetSFXVolume(v);
 
     public void OnPlayButton()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.LoadGame();
-        else
-            Debug.LogWarning("GameManager no encontrado en la escena.");
+        SceneManager.LoadScene("Main");
     }
 
     public void OnSettingsButton()
@@ -49,60 +60,28 @@ public class MainMenuUI : MonoBehaviour
         settingsPanel.SetActive(true);
     }
 
-    public void OnQuitButton()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.QuitGame();
-    }
-
-
     public void OnBackButton()
     {
-        ShowMainPanel();
-    }
-
-
-    public void OnMasterVolumeChanged(float value)
-    {
-        AudioManager.Instance?.SetMasterVolume(value);
-    }
-
-    public void OnMusicVolumeChanged(float value)
-    {
-        AudioManager.Instance?.SetMusicVolume(value);
-    }
-
-    public void OnSFXVolumeChanged(float value)
-    {
-        AudioManager.Instance?.SetSFXVolume(value);
-    }
-
-
-    private void ShowMainPanel()
-    {
-        mainPanel.SetActive(true);
         settingsPanel.SetActive(false);
+        mainPanel.SetActive(true);
     }
 
-    /// <summary>Sincroniza sliders con los valores guardados en AudioManager.</summary>
+    public void OnQuitButton()
+    {
+        Application.Quit();
+    }
+
     private void InitSliders()
     {
         if (AudioManager.Instance == null) return;
 
-        if (masterSlider != null)
-        {
-            masterSlider.value = AudioManager.Instance.GetMasterVolume();
-            masterSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
-        }
-        if (musicSlider != null)
-        {
-            musicSlider.value = AudioManager.Instance.GetMusicVolume();
-            musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
-        }
-        if (sfxSlider != null)
-        {
-            sfxSlider.value = AudioManager.Instance.GetSFXVolume();
-            sfxSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
-        }
+        // Temporarily remove listeners so setting .value doesn't fire callbacks
+        masterSlider.onValueChanged.RemoveAllListeners();
+        musicSlider.onValueChanged.RemoveAllListeners();
+        sfxSlider.onValueChanged.RemoveAllListeners();
+
+        masterSlider.value = AudioManager.Instance.GetSavedMasterVolume();
+        musicSlider.value = AudioManager.Instance.GetSavedMusicVolume();
+        sfxSlider.value = AudioManager.Instance.GetSavedSFXVolume();
     }
 }

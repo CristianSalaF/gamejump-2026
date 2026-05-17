@@ -1,10 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Shared interface – both enemy types implement this so the player
-// doesn't need to know which kind it is hitting.
+/// <summary>
+/// Shared interface – implemented by EnemyHealth so the player raycast
+/// works on any enemy type without knowing the concrete class.
+/// </summary>
 public interface IDamageable
 {
     void TakeDamage(int amount);
@@ -12,170 +12,156 @@ public interface IDamageable
 
 public class PlayerController : MonoBehaviour
 {
+    // ── Input ──────────────────────────────────────────────────────────────
     PlayerInput playerInput;
     PlayerInput.MainActions input;
 
+    // ── Components ─────────────────────────────────────────────────────────
     CharacterController controller;
     Animator animator;
 
-    // ── Two dedicated AudioSources ─────────────────────────────────────────
-    // Assign both in the Inspector and set their Output to the SFX mixer group.
+    // ── Audio ──────────────────────────────────────────────────────────────
+    // Both sources should be children of the Player and their Output set to
+    // the GameMixer → SFX group.
     [Header("Audio")]
-    [Tooltip("AudioSource used for sword swing sounds. Output → SFX mixer group.")]
-    public AudioSource sfxSource;       // looping-safe, one-shot SFX
-    [Tooltip("AudioSource used for hit sounds. Output → SFX mixer group.")]
-    public AudioSource hitSource;       // separate source so swing + hit can overlap
+    [Tooltip("Plays sword swing and hit sounds. Output → SFX mixer group.")]
+    public AudioSource sfxSource;
+    [Tooltip("Separate source so hit and swing can overlap.")]
+    public AudioSource hitSource;
 
-    [Header("Controller")]
-    public float moveSpeed = 5;
+    [Header("Attack Sounds")]
+    public AudioClip swordSwing;
+    public AudioClip hitSound;
+
+    // ── Movement ───────────────────────────────────────────────────────────
+    [Header("Movement")]
+    public float moveSpeed = 5f;
     public float gravity = -9.8f;
     public float jumpHeight = 1.2f;
 
-    Vector3 _PlayerVelocity;
+    Vector3 playerVelocity;
     bool isGrounded;
 
     [Header("Camera")]
     public Camera cam;
-    public float sensitivity;
+    public float sensitivity = 15f;
 
-    float xRotation = 0f;
+    float xRotation;
 
     [Header("Movement Lock")]
-    public bool movementLocked = true;
+    public bool movementLocked;
 
+    // ── Attack ─────────────────────────────────────────────────────────────
+    [Header("Attacking")]
+    public float attackDistance = 3f;
+    public float attackDelay = 0.4f;
+    public float attackSpeed = 1f;
+    public int attackDamage = 1;
+    public LayerMask attackLayer;
+
+    bool attacking;
+    bool readyToAttack = true;
+    int attackCount;
+
+    // ── Animation state names ──────────────────────────────────────────────
+    const string IDLE = "Idle";
+    const string WALK = "Walk";
+    const string ATTACK1 = "Attack 1";
+    const string ATTACK2 = "Attack 2";
+
+    string currentAnimationState;
+
+    // ──────────────────────────────────────────────────────────────────────
     void Awake()
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
-
         playerInput = new PlayerInput();
         input = playerInput.Main;
-        AssignInputs();
+
+        input.Jump.performed += _ => Jump();
+        input.Attack.started += _ => Attack();
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
+    void OnEnable() => input.Enable();
+    void OnDisable() => input.Disable();
+
+    // ──────────────────────────────────────────────────────────────────────
     void Update()
     {
         isGrounded = controller.isGrounded;
-
-        if (input.Attack.IsPressed())
-            Attack();
-
         SetAnimations();
     }
 
     void FixedUpdate()
     {
         if (!movementLocked)
-            MoveInput(input.Movement.ReadValue<Vector2>());
+            Move(input.Movement.ReadValue<Vector2>());
         else
             ApplyGravityOnly();
     }
 
     void LateUpdate()
     {
-        LookInput(input.Look.ReadValue<Vector2>());
+        Look(input.Look.ReadValue<Vector2>());
     }
 
-    void MoveInput(Vector2 input)
+    // ── Movement ───────────────────────────────────────────────────────────
+    void Move(Vector2 rawInput)
     {
-        Vector3 moveDirection = Vector3.zero;
-        moveDirection.x = input.x;
-        moveDirection.z = input.y;
-
-        controller.Move(transform.TransformDirection(moveDirection) * moveSpeed * Time.deltaTime);
-        _PlayerVelocity.y += gravity * Time.deltaTime;
-        if (isGrounded && _PlayerVelocity.y < 0)
-            _PlayerVelocity.y = -2f;
-        controller.Move(_PlayerVelocity * Time.deltaTime);
+        Vector3 dir = new Vector3(rawInput.x, 0f, rawInput.y);
+        controller.Move(transform.TransformDirection(dir) * moveSpeed * Time.deltaTime);
+        ApplyGravityOnly();
     }
 
     void ApplyGravityOnly()
     {
-        _PlayerVelocity.y += gravity * Time.deltaTime;
-        if (isGrounded && _PlayerVelocity.y < 0)
-            _PlayerVelocity.y = -2f;
-        controller.Move(_PlayerVelocity * Time.deltaTime);
+        playerVelocity.y += gravity * Time.deltaTime;
+        if (isGrounded && playerVelocity.y < 0f)
+            playerVelocity.y = -2f;
+        controller.Move(playerVelocity * Time.deltaTime);
     }
-
-    void LookInput(Vector3 input)
-    {
-        float mouseX = input.x;
-        float mouseY = input.y;
-
-        xRotation -= (mouseY * Time.deltaTime * sensitivity);
-        xRotation = Mathf.Clamp(xRotation, -80, 80);
-
-        cam.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
-        transform.Rotate(Vector3.up * (mouseX * Time.deltaTime * sensitivity));
-    }
-
-    void OnEnable() { input.Enable(); }
-    void OnDisable() { input.Disable(); }
 
     void Jump()
     {
-        if (movementLocked) return;
-        if (isGrounded)
-            _PlayerVelocity.y = Mathf.Sqrt(jumpHeight * -3.0f * gravity);
+        if (movementLocked || !isGrounded) return;
+        playerVelocity.y = Mathf.Sqrt(jumpHeight * -3f * gravity);
     }
 
-    void AssignInputs()
+    void Look(Vector2 rawInput)
     {
-        input.Jump.performed += ctx => Jump();
-        input.Attack.started += ctx => Attack();
+        xRotation -= rawInput.y * sensitivity * Time.deltaTime;
+        xRotation = Mathf.Clamp(xRotation, -80f, 80f);
+
+        cam.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * rawInput.x * sensitivity * Time.deltaTime);
     }
 
     public void LockMovement() => movementLocked = true;
     public void UnlockMovement() => movementLocked = false;
 
     // ── Animations ─────────────────────────────────────────────────────────
+    void SetAnimations()
+    {
+        if (attacking) return;
 
-    public const string IDLE = "Idle";
-    public const string WALK = "Walk";
-    public const string ATTACK1 = "Attack 1";
-    public const string ATTACK2 = "Attack 2";
+        // Use horizontal velocity only (y is gravity, not locomotion)
+        Vector2 flat = new Vector2(playerVelocity.x, playerVelocity.z);
+        ChangeAnimationState(flat.sqrMagnitude > 0.01f ? WALK : IDLE);
+    }
 
-    string currentAnimationState;
-
-    public void ChangeAnimationState(string newState)
+    void ChangeAnimationState(string newState)
     {
         if (currentAnimationState == newState) return;
         currentAnimationState = newState;
-        animator.CrossFadeInFixedTime(currentAnimationState, 0.2f);
+        animator.CrossFadeInFixedTime(newState, 0.2f);
     }
 
-    void SetAnimations()
-    {
-        if (!attacking)
-        {
-            if (_PlayerVelocity.x == 0 && _PlayerVelocity.z == 0)
-                ChangeAnimationState(IDLE);
-            else
-                ChangeAnimationState(WALK);
-        }
-    }
-
-    // ── Attacking ──────────────────────────────────────────────────────────
-
-    [Header("Attacking")]
-    public float attackDistance = 2f;
-    public float attackDelay = 0.4f;
-    public float attackSpeed = 1f;
-    public int attackDamage = 1;
-    public LayerMask attackLayer;
-
-    [Header("Attack Sounds")]
-    public AudioClip swordSwing;  // played immediately when attack starts
-    public AudioClip hitSound;    // played when the raycast connects
-
-    bool attacking = false;
-    bool readyToAttack = true;
-    int attackCount;
-
-    public void Attack()
+    // ── Attack ─────────────────────────────────────────────────────────────
+    void Attack()
     {
         if (!readyToAttack || attacking) return;
 
@@ -186,12 +172,7 @@ public class PlayerController : MonoBehaviour
         Invoke(nameof(ResetAttack), attackSpeed);
         Invoke(nameof(AttackRaycast), attackDelay);
 
-        // Sword swing – slight pitch randomisation for variety
-        if (sfxSource != null && swordSwing != null)
-        {
-            sfxSource.pitch = Random.Range(0.9f, 1.1f);
-            sfxSource.PlayOneShot(swordSwing);
-        }
+        PlayOneShot(sfxSource, swordSwing, Random.Range(0.9f, 1.1f));
 
         if (attackCount == 0)
         {
@@ -214,21 +195,24 @@ public class PlayerController : MonoBehaviour
 
     void AttackRaycast()
     {
-        if (Physics.Raycast(cam.transform.position, cam.transform.forward,
-                            out RaycastHit hit, attackDistance, attackLayer))
-        {
-            // Hit sound through its own source so it can overlap the swing
-            if (hitSource != null && hitSound != null)
-            {
-                hitSource.pitch = 1f;
-                hitSource.PlayOneShot(hitSound);
-            }
+        if (!Physics.Raycast(cam.transform.position,
+                             cam.transform.forward,
+                             out RaycastHit hit,
+                             attackDistance,
+                             attackLayer))
+            return;
 
-            if (hit.transform.TryGetComponent<IDamageable>(out IDamageable target))
-            {
-                target.TakeDamage(attackDamage);
-                Debug.Log(target + " attacked");
-            }
-        }
+        PlayOneShot(hitSource, hitSound, 1f);
+
+        if (hit.transform.TryGetComponent<IDamageable>(out var target))
+            target.TakeDamage(attackDamage);
+    }
+
+    // ── Audio helpers ──────────────────────────────────────────────────────
+    static void PlayOneShot(AudioSource source, AudioClip clip, float pitch)
+    {
+        if (source == null || clip == null) return;
+        source.pitch = pitch;
+        source.PlayOneShot(clip);
     }
 }

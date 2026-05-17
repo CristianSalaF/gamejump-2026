@@ -1,60 +1,38 @@
 using UnityEngine;
 
 /// <summary>
-/// Componente de salud genérico para cualquier enemigo.
-/// Conecta automáticamente con EnemyHealthBar si está presente en el mismo GameObject
-/// o en alguno de sus hijos.
-///
-/// INTEGRACIÓN con MeleeEnemy / RangedEnemy:
-///   • Añade este componente al prefab del enemigo.
-///   • En MeleeEnemy.TakeDamage (si lo tienes), llama: GetComponent<EnemyHealth>().TakeDamage(dmg);
-///   • O deja que los proyectiles llamen directamente a este componente:
-///       if (other.TryGetComponent<EnemyHealth>(out var eh)) eh.TakeDamage(damage);
+/// Single source of truth for enemy hit points.
+/// Attach this to every enemy. MeleeEnemy / RangedEnemy reference it for death.
+/// Implements IDamageable so the player raycast can hit any enemy type uniformly.
 /// </summary>
-public class EnemyHealth : MonoBehaviour
+public class EnemyHealth : MonoBehaviour, IDamageable
 {
-    [Header("Configuración")]
+    [Header("Stats")]
     public int maxHealth = 3;
 
-    [Header("Efectos opcionales")]
+    [Header("Optional")]
     public GameObject deathEffectPrefab;
 
-    // Estado interno
-    private int _currentHealth;
-    private EnemyHealthBar _healthBar;
+    int currentHealth;
 
+    // Optional reference – filled automatically if a health-bar component exists.
+    EnemyHealthBar healthBar;
 
     void Awake()
     {
-        _currentHealth = maxHealth;
-        _healthBar = GetComponentInChildren<EnemyHealthBar>(includeInactive: true);
+        currentHealth = maxHealth;
+        healthBar = GetComponent<EnemyHealthBar>();
     }
-
-    void Start()
-    {
-        _healthBar?.Init(maxHealth);
-    }
-
 
     public void TakeDamage(int amount)
     {
-        if (_currentHealth <= 0) return;
+        currentHealth -= amount;
+        healthBar?.UpdateBar(currentHealth, maxHealth);
 
-        _currentHealth = Mathf.Max(0, _currentHealth - amount);
-        _healthBar?.SetHealth(_currentHealth, maxHealth);
-
-        if (_currentHealth <= 0)
-            Die();
+        if (currentHealth <= 0) Die();
     }
 
-    public void Heal(int amount)
-    {
-        _currentHealth = Mathf.Min(maxHealth, _currentHealth + amount);
-        _healthBar?.SetHealth(_currentHealth, maxHealth);
-    }
-
-
-    private void Die()
+    void Die()
     {
         if (deathEffectPrefab != null)
         {

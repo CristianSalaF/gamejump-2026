@@ -2287,10 +2287,10 @@ MonoBehaviour:
   masterParam: MasterVolume
   musicParam: MusicVolume
   sfxParam: SFXVolume
-  musicSourceA: {fileID: 0}
-  musicSourceB: {fileID: 0}
-  mainMenuMusic: {fileID: 0}
-  gameplayMusic: {fileID: 0}
+  musicSourceA: {fileID: 889183873}
+  musicSourceB: {fileID: 140867234}
+  mainMenuMusic: {fileID: 8300000, guid: 4c1029e57a26dbf458f23c0b07216132, type: 3}
+  gameplayMusic: {fileID: 8300000, guid: b2946aee2b0991349925b075756880f3, type: 3}
   defaultMasterVolume: 1
   defaultMusicVolume: 1
   defaultSFXVolume: 1

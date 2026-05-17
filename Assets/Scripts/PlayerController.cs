@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Shared interface — both enemy types implement this so the player
+// Shared interface ï¿½ both enemy types implement this so the player
 // doesn't need to know which kind it is hitting.
 public interface IDamageable
 {
@@ -157,7 +157,7 @@ public class PlayerController : MonoBehaviour
     // ------------------- //
 
     [Header("Attacking")]
-    public float attackDistance = 3f;
+    public float attackDistance = 2f;
     public float attackDelay = 0.4f;
     public float attackSpeed = 1f;
     public int attackDamage = 1;
@@ -213,6 +213,7 @@ public class PlayerController : MonoBehaviour
             // Works with any component that implements IDamageable
             if (hit.transform.TryGetComponent<IDamageable>(out IDamageable target))
                 target.TakeDamage(attackDamage);
+                Debug.Log(target + " attacked");
         }
     }
 

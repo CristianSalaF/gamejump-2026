@@ -48,6 +48,7 @@ public class MeleeEnemy : MonoBehaviour
     public void TakeDamage(int amount)
     {
         currentHealth -= amount;
+        Debug.Log(currentHealth);
         if (currentHealth <= 0) Die();
     }
 
@@ -58,7 +59,7 @@ public class MeleeEnemy : MonoBehaviour
 
     // -------------------------------------------------- //
     // Deal damage on contact with the player             //
-    // CharacterController doesn't fire OnCollision —     //
+    // CharacterController doesn't fire OnCollision ï¿½     //
     // set the enemy collider to "Is Trigger" instead.   //
     // -------------------------------------------------- //
     void OnTriggerEnter(Collider other)
